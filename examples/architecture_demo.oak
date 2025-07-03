@@ -1,0 +1,42 @@
+BEGIN PROJ "architecture_demo.project"
+    BEGIN SECTION "demo"
+        print "=== Oak Architectural Calculations Demo ==="
+        print ""
+
+        print "1. Wind Stiffness Compliance (Compliant Example):"
+        var ws1 := calc_architecture("wind_stiffness", 20.0, 15.0)
+        print ws1
+        print ""
+
+        print "2. Wind Stiffness Compliance (Non-Compliant Example):"
+        var ws2 := calc_architecture("wind_stiffness", 20.0, 3.0)
+        print ws2
+        print ""
+
+        print "3. Slenderness Ratio Calculation:"
+        var sr := calc_architecture("slenderness_ratio", 20.0, 15.0)
+        print sr
+        print ""
+
+        print "4. Building Stability Verification (Stable Example):"
+        // dead_load, wind_load, length, width, height, floors, wind_height
+        var st1 := calc_architecture("stability", 5.0, 1.0, 20.0, 15.0, 30.0, 10.0, 15.0)
+        print st1
+        print ""
+
+        print "5. Building Stability Verification (Unstable Example):"
+        var st2 := calc_architecture("stability", 1.0, 5.0, 10.0, 10.0, 20.0, 5.0, 10.0)
+        print st2
+        print ""
+
+        print "6. Minimum Dead Load Calculation:"
+        // wind_load, length, width, height, floors, wind_height, safety_factor
+        var mdl := calc_architecture("min_dead_load", 2.0, 20.0, 15.0, 30.0, 8.0, 15.0, 3.0)
+        print mdl
+        print ""
+
+        print "=== Demo Complete ==="
+        print "Note: This demonstrates wind stiffness, stability, slenderness, and minimum dead load calculations."
+        ret "Architecture calculation demo complete!"
+    END SECTION "demo"
+END PROJ "architecture_demo.project" 

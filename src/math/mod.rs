@@ -17,6 +17,26 @@ pub struct StabilityResult {
     pub safety_margin: f64,
 }
 
+/// Wind stiffness compliance result
+#[derive(Debug, Clone)]
+pub struct WindStiffnessResult {
+    pub length_a: f64,
+    pub width_b: f64,
+    pub slenderness_ratio: f64,
+    pub is_compliant: bool,
+    pub warning_message: Option<String>,
+}
+
+/// Architectural calculation result
+#[derive(Debug, Clone)]
+pub struct ArchitecturalResult {
+    pub calculation_type: String,
+    pub result_value: f64,
+    pub is_success: bool,
+    pub message: String,
+    pub details: Option<String>,
+}
+
 impl MathModule {
     /// Calculate the sine of an angle in radians
     /// Always defined for all real numbers
@@ -113,6 +133,22 @@ impl MathModule {
     }
 
     // Helper functions for building stability calculations
+
+    /// Safely convert f64 to u32 with comprehensive validation
+    /// 
+    /// # Arguments
+    /// * `value` - The f64 value to convert
+    /// * `parameter_name` - Name of the parameter for error messages
+    /// 
+    /// # Returns
+    /// * `Ok(u32)` if conversion is safe
+    /// * `Err(String)` with descriptive error message if conversion is unsafe
+    fn safe_f64_to_u32(value: f64, parameter_name: &str) -> Result<u32, String> {
+        if value.is_nan() || value.is_infinite() || value < 0.0 || value > u32::MAX as f64 {
+            return Err(format!("{} cannot be NaN, infinite, negative or exceeds maximum value", parameter_name));
+        }
+        Ok(value as u32)
+    }
 
     /// Validate building dimension parameters
     /// 
@@ -387,6 +423,229 @@ impl MathModule {
         
         Ok(required_dead_load_per_sqm)
     }
+
+    /// Check wind stiffness compliance based on slenderness ratio
+    /// 
+    /// # Arguments
+    /// * `length_a` - Longer side (length) of the building (m)
+    /// * `width_b` - Shorter side (width) of the building (m)
+    /// 
+    /// # Returns
+    /// * `WindStiffnessResult` with compliance check results
+    /// 
+    /// # Compliance Criterion
+    /// The building is considered compliant if b/a > 1/5
+    /// where b is the shorter side and a is the longer side
+    /// 
+    /// # Example
+    /// ```rust
+    /// use oak::MathModule;
+    /// let result = MathModule::check_wind_stiffness_compliance(20.0, 15.0);
+    /// assert!(result.unwrap().is_compliant); // 15/20 = 0.75 > 0.2
+    /// ```
+    pub fn check_wind_stiffness_compliance(length_a: f64, width_b: f64) -> Result<WindStiffnessResult, String> {
+        // Use existing calculate_slenderness_ratio function for validation and calculation
+        let slenderness_ratio = MathModule::calculate_slenderness_ratio(length_a, width_b)?;
+        
+        // Identify longer and shorter sides for the result
+        let (a, b) = if length_a >= width_b {
+            (length_a, width_b)
+        } else {
+            (width_b, length_a)
+        };
+        
+        // Check compliance criterion (b/a > 1/5)
+        let is_compliant = slenderness_ratio > 0.2; // 1/5 = 0.2
+
+        // Generate warning message if not compliant
+        let warning_message = if !is_compliant {
+            Some(format!(
+                "Building is too slender. Slenderness ratio {:.3} is below the minimum requirement of 0.2. Consider increasing the shorter dimension or adding structural reinforcements.",
+                slenderness_ratio
+            ))
+        } else {
+            None
+        };
+
+        Ok(WindStiffnessResult {
+            length_a: a,
+            width_b: b,
+            slenderness_ratio,
+            is_compliant,
+            warning_message,
+        })
+    }
+
+    /// Perform comprehensive architectural calculations
+    /// 
+    /// # Arguments
+    /// * `calculation_type` - Type of calculation to perform
+    /// * `params` - Vector of parameters for the calculation
+    /// 
+    /// # Supported Calculation Types
+    /// * "wind_stiffness" - Check wind stiffness compliance (params: [length, width])
+    /// * "stability" - Verify building stability (params: [dead_load, wind_load, length, width, height, floors, wind_height])
+    /// * "min_dead_load" - Calculate minimum dead load (params: [wind_load, length, width, height, floors, wind_height, safety_factor])
+    /// * "slenderness_ratio" - Calculate slenderness ratio (params: [length, width])
+    /// 
+    /// # Returns
+    /// * `ArchitecturalResult` with calculation results
+    pub fn calc_architecture(calculation_type: &str, params: Vec<f64>) -> Result<ArchitecturalResult, String> {
+        match calculation_type.to_lowercase().as_str() {
+            "wind_stiffness" => {
+                if params.len() != 2 {
+                    return Err("Wind stiffness calculation requires exactly 2 parameters: [length, width]".to_string());
+                }
+                
+                let result = MathModule::check_wind_stiffness_compliance(params[0], params[1])?;
+                let message = if result.is_compliant {
+                    format!("Wind stiffness compliant. Slenderness ratio: {:.3}", result.slenderness_ratio)
+                } else {
+                    format!("Wind stiffness non-compliant. Slenderness ratio: {:.3}", result.slenderness_ratio)
+                };
+                
+                Ok(ArchitecturalResult {
+                    calculation_type: "wind_stiffness".to_string(),
+                    result_value: result.slenderness_ratio,
+                    is_success: result.is_compliant,
+                    message,
+                    details: result.warning_message,
+                })
+            }
+            
+            "stability" => {
+                if params.len() != 7 {
+                    return Err("Stability calculation requires exactly 7 parameters: [dead_load, wind_load, length, width, height, floors, wind_height]".to_string());
+                }
+                
+                // Validate floors parameter for safe f64 to u32 conversion
+                let num_floors = MathModule::safe_f64_to_u32(params[5], "Number of floors")?;
+                
+                let result = MathModule::verify_building_stability(
+                    params[0], params[1], params[2], params[3], params[4], 
+                    num_floors, params[6]
+                )?;
+                
+                let message = if result.is_stable {
+                    format!("Building is stable. Stability ratio: {:.3}", result.stability_ratio)
+                } else {
+                    format!("Building is unstable. Stability ratio: {:.3}", result.stability_ratio)
+                };
+                
+                let details = format!(
+                    "Resisting moment: {:.2} kN⋅m, Overturning moment: {:.2} kN⋅m, Safety margin: {:.3}",
+                    result.resisting_moment, result.overturning_moment, result.safety_margin
+                );
+                
+                Ok(ArchitecturalResult {
+                    calculation_type: "stability".to_string(),
+                    result_value: result.stability_ratio,
+                    is_success: result.is_stable,
+                    message,
+                    details: Some(details),
+                })
+            }
+            
+            "min_dead_load" => {
+                if params.len() != 7 {
+                    return Err("Minimum dead load calculation requires exactly 7 parameters: [wind_load, length, width, height, floors, wind_height, safety_factor]".to_string());
+                }
+                
+                // Validate floors parameter for safe f64 to u32 conversion
+                let num_floors = MathModule::safe_f64_to_u32(params[4], "Number of floors")?;
+                
+                let result = MathModule::calculate_minimum_dead_load(
+                    params[0], params[1], params[2], params[3], 
+                    num_floors, params[5], params[6]
+                )?;
+                
+                let message = format!("Minimum required dead load: {:.3} kN/m²", result);
+                
+                Ok(ArchitecturalResult {
+                    calculation_type: "min_dead_load".to_string(),
+                    result_value: result,
+                    is_success: true,
+                    message,
+                    details: None,
+                })
+            }
+            
+            "slenderness_ratio" => {
+                if params.len() != 2 {
+                    return Err("Slenderness ratio calculation requires exactly 2 parameters: [length, width]".to_string());
+                }
+                
+                // Use existing calculate_slenderness_ratio function for validation and calculation
+                let ratio = MathModule::calculate_slenderness_ratio(params[0], params[1])?;
+                
+                // Identify longer and shorter sides for the details
+                let (a, b) = if params[0] >= params[1] {
+                    (params[0], params[1])
+                } else {
+                    (params[1], params[0])
+                };
+                
+                let message = format!("Slenderness ratio: {:.3} (b/a)", ratio);
+                
+                Ok(ArchitecturalResult {
+                    calculation_type: "slenderness_ratio".to_string(),
+                    result_value: ratio,
+                    is_success: true,
+                    message,
+                    details: Some(format!("Longer side (a): {:.2} m, Shorter side (b): {:.2} m", a, b)),
+                })
+            }
+            
+            _ => {
+                Err(format!("Unknown calculation type: {}. Supported types: wind_stiffness, stability, min_dead_load, slenderness_ratio", calculation_type))
+            }
+        }
+    }
+
+    /// Calculate slenderness ratio (b/a) for building footprint
+    /// 
+    /// # Arguments
+    /// * `length_a` - Longer side (length) of the building (m)
+    /// * `width_b` - Shorter side (width) of the building (m)
+    /// 
+    /// # Returns
+    /// * Slenderness ratio (b/a)
+    /// 
+    /// # Example
+    /// ```rust
+    /// use oak::MathModule;
+    /// let ratio = MathModule::calculate_slenderness_ratio(20.0, 15.0);
+    /// assert_eq!(ratio, Ok(0.75)); // 15/20 = 0.75
+    /// ```
+    pub fn calculate_slenderness_ratio(length_a: f64, width_b: f64) -> Result<f64, String> {
+        // Validate input parameters
+        if length_a <= 0.0 {
+            return Err("Building length must be positive".to_string());
+        }
+        if width_b <= 0.0 {
+            return Err("Building width must be positive".to_string());
+        }
+
+        // Identify longer and shorter sides
+        let (a, b) = if length_a >= width_b {
+            (length_a, width_b)
+        } else {
+            (width_b, length_a)
+        };
+
+        // Check for division by zero before calculation
+        if a == 0.0 {
+            return Err("Building length cannot be zero".to_string());
+        }
+
+        // Calculate slenderness ratio
+        let slenderness_ratio = b / a;
+        
+        // Validate result
+        MathModule::validate_calculation_result(slenderness_ratio, "Slenderness ratio calculation")?;
+
+        Ok(slenderness_ratio)
+    }
 }
 
 /// Function registry for math functions
@@ -414,4 +673,18 @@ pub fn get_math_constants() -> std::collections::HashMap<String, f64> {
     constants.insert("E".to_string(), MathModule::e());
     
     constants
+}
+
+/// Expose architectural calculation as a command for the interpreter/CLI
+pub fn calc_architecture_command(calculation_type: &str, params: Vec<f64>) -> String {
+    match MathModule::calc_architecture(calculation_type, params) {
+        Ok(result) => {
+            let mut output = format!("{}: {}\n", result.calculation_type, result.message);
+            if let Some(details) = result.details {
+                output.push_str(&format!("{}\n", details));
+            }
+            output
+        }
+        Err(e) => format!("Error: {}", e),
+    }
 } 
