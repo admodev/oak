@@ -10,6 +10,8 @@
 
 - [ ] Generate line/column positions for error reporting
 
+- [ ] Compilation to x86_64
+
 ### Additional Features
 
 ...
