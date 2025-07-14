@@ -36,13 +36,14 @@ fn main() {
         // If no flags are passed to the binary, it will run the script passed to the cli
         argument_string => {
             if script_argument_re.is_match(argument_string) {
-                let executed_script = run(argument_string.to_string());
-
-                if executed_script.is_err() {
-                    println!("FATAL ERROR while trying to run script. Exiting.");
-                    process::exit(1);
-                } else {
-                    process::exit(0);
+                match run(argument_string.to_string()) {
+                    Ok(_) => {
+                        process::exit(0);
+                    }
+                    Err(e) => {
+                        println!("FATAL ERROR while trying to run script: {}", e);
+                        process::exit(1);
+                    }
                 }
             }
         }
@@ -52,7 +53,6 @@ fn main() {
         println!("Implement this function...");
     } else {
         call_for_help();
-        println!("Implement rest of the code...");
     };
 
     println!("Result: {:?}", result);

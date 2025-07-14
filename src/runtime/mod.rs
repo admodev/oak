@@ -1,10 +1,18 @@
 // Script Runner
-use crate::parser::{ScriptError, parse_script};
+use crate::parser::parse_script;
+use crate::interpreter::Interpreter;
+use std::error::Error;
 
-pub fn run(source: String) -> Result<(), ScriptError> {
+pub fn run(source: String) -> Result<(), Box<dyn Error>> {
     println!("Running script with Oak version 0.1.0...");
 
-    let parsed_script: Result<(), ScriptError> = parse_script(source);
+    let ast = parse_script(source)?;
+    let mut interpreter = Interpreter::new();
 
-    return parsed_script;
+    // Walk the AST with the interpreter (all nodes)
+    for node in ast {
+        node.accept(&mut interpreter);
+    }
+
+    Ok(())
 }

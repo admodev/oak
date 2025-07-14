@@ -1,0 +1,9 @@
+BEGIN PROJ "test_integration.project"
+    BEGIN SECTION "main"
+        var x := 42
+        ret print x
+        ret print "Hello, Oak!"
+        var y := 3.14
+        ret print y
+    END SECTION "main"
+END PROJ "test_integration.project" 
