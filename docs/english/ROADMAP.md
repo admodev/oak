@@ -22,4 +22,4 @@
 
 ### Desired Features
 
-...
+- [ ] Integration with AI
