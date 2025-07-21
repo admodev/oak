@@ -23,3 +23,5 @@
 ### Desired Features
 
 - [ ] Integration with AI
+
+- [ ] AI driven code improvements
