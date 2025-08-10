@@ -23,4 +23,4 @@ This repository uses gitAds.
 
 Early and consistent contributors are listed here (thanks for the support 🫶):
 
-- @nallovint
+- [@nallovint](https://github.com/nallovint)
