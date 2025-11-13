@@ -1,0 +1,29 @@
+# Arrays and pointers in Oak
+# Demonstrates array and pointer support
+
+fn array_sum(arr: [posint32; 10], len: posint32) -> posint32 {
+    let sum: posint32 := 0;
+    let i: posint32 := 0;
+    
+    while i < len {
+        sum := sum + arr[i];
+        i := i + 1;
+    }
+    
+    ret sum;
+}
+
+fn main() -> void {
+    # Array declaration with fixed size
+    let numbers: [posint32; 5] := [1, 2, 3, 4, 5];
+    
+    # Pointer to array element
+    let ptr: *posint32 := &numbers[0];
+    
+    # Array access with bounds checking
+    let first: posint32 := numbers[0];
+    let last: posint32 := numbers[4];
+    
+    # Sum computation
+    let total: posint32 := array_sum(numbers, 5);
+}

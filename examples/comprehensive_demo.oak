@@ -1,0 +1,207 @@
+# Comprehensive Oak MVP Example
+# This demonstrates all major MVP features
+
+# ===== EXTERN C FUNCTIONS =====
+extern fn printf(i8*, ...) -> i32;
+extern fn malloc(u64) -> *void;
+extern fn free(*void) -> void;
+extern fn strlen(i8*) -> u64;
+
+# ===== TYPE SYSTEM AND VARIABLES =====
+# Oak supports rich type annotations with type inference
+
+fn demonstrate_types() -> void {
+    # Integer types
+    let unsigned: u32 := 100;
+    let signed: i32 := -50;
+    let positive: posint32 := 75;  # Value guaranteed >= 0
+    
+    # Floating point
+    let decimal: f64 := 3.14159;
+    let single: f32 := 2.71;
+    
+    # Boolean
+    let flag: bool := true;
+    
+    # String types
+    let fixed: str := "hello";
+    let dynamic: Text := "Hello, Oak MVP!";
+}
+
+# ===== TYPE ASSERTIONS AND CASTING =====
+fn demonstrate_casting() -> void {
+    let x: i32 := 42;
+    
+    # Cast to different numeric type
+    let as_i64: i64 := x as i64;
+    let as_float: f64 := x as f64;
+    
+    # Type assertions with complex expressions
+    let computed: f64 := ((5 as i64) as f64) + 2.5;
+}
+
+# ===== FUNCTIONS WITH PARAMETERS =====
+fn add(a: i32, b: i32) -> i32 {
+    ret a + b;
+}
+
+fn multiply(x: f64, y: f64) -> f64 {
+    ret x * y;
+}
+
+# ===== RECURSIVE FUNCTIONS =====
+fn factorial(n: posint32) -> posint32 {
+    if n <= 1 {
+        ret 1;
+    } else {
+        ret n * factorial(n - 1);
+    }
+}
+
+# ===== ARRAY SUPPORT =====
+fn array_operations() -> void {
+    # Fixed-size array
+    let numbers: [i32; 5] := [1, 2, 3, 4, 5];
+    
+    # Array access
+    let first: i32 := numbers[0];
+    let last: i32 := numbers[4];
+    
+    # Array in function (passed by reference)
+    let sum: i32 := sum_array(numbers);
+}
+
+fn sum_array(arr: [i32; 5]) -> i32 {
+    let result: i32 := 0;
+    let i: i32 := 0;
+    
+    while i < 5 {
+        result := result + arr[i];
+        i := i + 1;
+    }
+    
+    ret result;
+}
+
+# ===== POINTERS AND REFERENCES =====
+fn pointer_operations() -> void {
+    let x: i32 := 42;
+    
+    # Create reference (address)
+    let ptr: *i32 := &x;
+    
+    # Dereference pointer
+    let value: i32 := *ptr;
+    
+    # Void pointer (for FFI)
+    let generic: *void := ptr as *void;
+    let back: *i32 := generic as *i32;
+}
+
+# ===== STRUCT SUPPORT =====
+struct Point {
+    x: f64,
+    y: f64,
+}
+
+struct Rectangle {
+    top_left: Point,
+    bottom_right: Point,
+}
+
+fn point_distance(p1: Point, p2: Point) -> f64 {
+    let dx: f64 := p1.x - p2.x;
+    let dy: f64 := p1.y - p2.y;
+    ret ((dx * dx) + (dy * dy)) ^ 0.5;  # sqrt(dx^2 + dy^2)
+}
+
+# ===== CONTROL FLOW =====
+fn control_flow_demo(value: i32) -> void {
+    # If-else
+    if value > 0 {
+        # Positive
+    } else if value < 0 {
+        # Negative
+    } else {
+        # Zero
+    }
+    
+    # While loop
+    let counter: i32 := 0;
+    while counter < 10 {
+        counter := counter + 1;
+    }
+    
+    # For loop
+    let arr: [i32; 3] := [1, 2, 3];
+    for elem in arr {
+        # Process each element
+    }
+}
+
+# ===== BREAK AND CONTINUE =====
+fn loop_control() -> void {
+    let i: i32 := 0;
+    while i < 100 {
+        if i == 50 {
+            break;  # Exit loop early
+        }
+        
+        if i % 2 == 0 {
+            i := i + 1;
+            continue;  # Skip to next iteration
+        }
+        
+        i := i + 1;
+    }
+}
+
+# ===== EXTERN C FUNCTION CALLS =====
+fn ffi_example() -> void {
+    # Call external C function
+    let msg: i8* := "Length calculation" as i8*;
+    let len: u64 := strlen(msg);
+    
+    # Allocate memory via C's malloc
+    let buffer: *void := malloc(1024);
+    
+    # Use the buffer...
+    
+    # Free memory
+    free(buffer);
+}
+
+# ===== MAIN FUNCTION =====
+fn main() -> void {
+    # Demonstrate all features
+    demonstrate_types();
+    demonstrate_casting();
+    
+    # Function calls
+    let result: i32 := add(10, 32);
+    let fact: posint32 := factorial(5);  # 120
+    
+    # Arrays
+    array_operations();
+    
+    # Pointers
+    pointer_operations();
+    
+    # Structs
+    let p1: Point := { x: 0.0, y: 0.0 };
+    let p2: Point := { x: 3.0, y: 4.0 };
+    let dist: f64 := point_distance(p1, p2);  # 5.0
+    
+    # Control flow
+    control_flow_demo(42);
+    
+    # Loop control
+    loop_control();
+    
+    # FFI
+    ffi_example();
+}
+
+# ===== PROGRAM ENTRY POINT =====
+# Call main function
+main();

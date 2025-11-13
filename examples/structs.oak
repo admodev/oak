@@ -1,0 +1,26 @@
+# Struct support in Oak
+
+struct Point {
+    x: f64,
+    y: f64,
+}
+
+struct Rectangle {
+    top_left: Point,
+    bottom_right: Point,
+}
+
+fn distance(a: Point, b: Point) -> f64 {
+    let dx: f64 := a.x - b.x;
+    let dy: f64 := a.y - b.y;
+    # sqrt(dx^2 + dy^2)
+    ret ((dx * dx) + (dy * dy)) ^ 0.5;
+}
+
+fn main() -> void {
+    let p1: Point := { x: 0.0, y: 0.0 };
+    let p2: Point := { x: 3.0, y: 4.0 };
+    
+    let dist: f64 := distance(p1, p2);
+    # dist should be 5.0
+}

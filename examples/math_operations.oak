@@ -1,0 +1,26 @@
+# Math operations in Oak
+# Demonstrates type system and arithmetic
+
+fn factorial(n: posint64) -> posint64 {
+    if n <= 1 {
+        ret 1;
+    } else {
+        ret n * factorial(n - 1);
+    }
+}
+
+fn main() -> void {
+    # Type declarations with Oak's primitive types
+    let a: posint32 := 5;
+    let b: posint32 := 10;
+    
+    # Arithmetic operations
+    let sum: posint32 := a + b;
+    let product: posint32 := a * b;
+    
+    # Comparison operations
+    if a < b {
+        # Type assertion with 'as'
+        let ratio: f64 := (sum as f64) / (a as f64);
+    }
+}

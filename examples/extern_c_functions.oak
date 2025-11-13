@@ -1,0 +1,18 @@
+# Extern C Functions in Oak
+# Demonstrates FFI (Foreign Function Interface) support
+
+extern fn malloc(u64) -> *void;
+extern fn free(*void) -> void;
+extern fn printf(i8*, ...) -> i32;
+extern fn strlen(i8*) -> u64;
+
+fn main() -> void {
+    # Allocate memory via C's malloc
+    let buffer: *void := malloc(256);
+    
+    # We can work with C pointers directly
+    let char_ptr: *i8 := buffer as *i8;
+    
+    # Free memory via C's free
+    free(buffer);
+}

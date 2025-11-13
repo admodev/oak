@@ -14,6 +14,9 @@ repository = "https://github.com/admodev/oak"
 regex = "1.10"
 lazy_static = "1.4"
 thiserror = "2.0.12"
+inkwell = { version = "0.18", features = ["llvm18-0"] }
+rustyline = "13"
+llvm-sys = "180"
 
 [dev-dependencies]
 assert_cmd = "2.0"

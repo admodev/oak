@@ -1,0 +1,14 @@
+# Hello World in Oak
+# This demonstrates basic Oak syntax
+
+extern fn printf(i8*) -> i32;
+
+fn main() -> void {
+    # Variable declaration with type inference
+    let greeting: Text := "Hello, Oak!";
+    
+    # Function call
+    printf(greeting);
+}
+
+main();
